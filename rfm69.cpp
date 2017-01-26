@@ -45,7 +45,7 @@ RFM69HCW::RFM69HCW(){
 	External interrupt handler. It is called after radiomodule has transmitted
 	or received the packet.
 */
-void RFM69HCW::RFM69HCW::EXTI2_IRQHandler(void)
+void RFM69HCW::EXTI2_IRQHandler(void)
 {
 	int tmp;
 
