@@ -1,5 +1,3 @@
-#include "stm32f10x_conf.h"
-
 #include "rfm69.h"
 
 /** @mainpage
@@ -28,19 +26,26 @@
 	
  @file rfm69.c @brief
 	This is the main and only .c file, which contains all of the functions of rfm69 library.
-*/
 
-/* 	Global variables, connect this variables to use this library	 */
-uint8_t packet_buffer[RFM69_BUFFER_SIZE - 2];	///< packet buffer
-uint8_t rfm69_condition;						///< state of the radiomodule
-uint8_t packet_size;							///< packet size
+    TODO: convert to C++
+*/
+namespace rover {
+
+/** 
+	@function
+    Constructor
+*/
+RFM69HCW::RFM69HCW(){
+    /* call rfm69_init() */
+
+}
 
 /** 
 	@function
 	External interrupt handler. It is called after radiomodule has transmitted
 	or received the packet.
 */
-void EXTI2_IRQHandler(void)
+void RFM69HCW::RFM69HCW::EXTI2_IRQHandler(void)
 {
 	int tmp;
 
@@ -78,7 +83,7 @@ void EXTI2_IRQHandler(void)
 	level has been exceeded. This interrupt is useful for transmitting and 
 	receiving packets bigger than 64 bytes. And it is not used in this firmware.
 */
-void EXTI1_IRQHandler(void)
+void RFM69HCW::EXTI1_IRQHandler(void)
 {
     switch(rfm69_condition)
     {
@@ -99,7 +104,7 @@ void EXTI1_IRQHandler(void)
 	External interrupt handler. It is called after rerceived signal has 
 	exceeded FIFO threshold. And it is not used at that moment.
 */
-void EXTI0_IRQHandler(void)
+void RFM69HCW::EXTI0_IRQHandler(void)
 {
     switch(rfm69_condition)
     {
@@ -124,7 +129,7 @@ void EXTI0_IRQHandler(void)
 	@param address - register address
 	@param data	- register value 
 */
-void rfm69_write(uint8_t address, uint8_t data)
+void RFM69HCW::rfm69_write(uint8_t address, uint8_t data)
 {
 	__disable_irq();
 	while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_BSY) == SET);           
@@ -154,10 +159,11 @@ void rfm69_write(uint8_t address, uint8_t data)
 /** 
 	@function
 	Read radiomodule register via SPI
+    TODO: Modify with SPIDevice calls
 	@param address - register address
 	@return register value 
 */
-uint8_t rfm69_read(uint8_t address)
+uint8_t RFM69HCW::rfm69_read(uint8_t address)
 {
 	uint8_t data = 0x00;
 
@@ -196,7 +202,7 @@ uint8_t rfm69_read(uint8_t address)
 	@param ndata - number of registers
 	\warning because of rfm69 hardware bugs not recommended to use  
 */
-void rfm69_write_burst(uint8_t address, uint8_t *data, uint8_t ndata)
+void RFM69HCW::rfm69_write_burst(uint8_t address, uint8_t *data, uint8_t ndata)
 {
 	uint8_t i;
 
@@ -230,7 +236,7 @@ void rfm69_write_burst(uint8_t address, uint8_t *data, uint8_t ndata)
 	@param ndata - number of registers
 	\warning because of rfm69 hardware bugs not recommended to use
 */
-void rfm69_read_burst(uint8_t address, uint8_t *data, uint8_t ndata)
+void RFM69HCW::rfm69_read_burst(uint8_t address, uint8_t *data, uint8_t ndata)
 {
 	uint8_t i;
 
@@ -267,8 +273,9 @@ void rfm69_read_burst(uint8_t address, uint8_t *data, uint8_t ndata)
 	@function
 	This function implements MCU initialisation, i.e. initialisaton of SPI 
 	interface, interrupts, GPIOs, etc. 
+    TODO: replace code with SPIDevice calls
 */
-void rfm69_mcu_init(void)
+void RFM69HCW::rfm69_mcu_init(void)
 {
 //	Clock sources
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
@@ -351,7 +358,7 @@ void rfm69_mcu_init(void)
 	RFM69_SPI_FAILED state. 
 	@return 0 if initialisation completed successfully, and -1 otherwise
 */
-int rfm69_init(void)
+int RFM69HCW::rfm69_init(void)
 {
 	int j;
 
@@ -457,7 +464,7 @@ int rfm69_init(void)
 	@param address - destination address (use broadcast address 0xff if you do not know any)
 	@return negative value if something wrong (package is too big, or SPI doesn't work), and return 0 if all is well
 */
-int rfm69_transmit_start(uint8_t packet_size_loc, uint8_t address)
+int RFM69HCW::rfm69_transmit_start(uint8_t packet_size_loc, uint8_t address)
 {
 	int i;
 
@@ -494,7 +501,7 @@ int rfm69_transmit_start(uint8_t packet_size_loc, uint8_t address)
 	@function
 	Switch radiomodule into receiver mode.
 */
-void rfm69_receive_start(void)
+void RFM69HCW::rfm69_receive_start(void)
 {
 	rfm69_condition = RFM69_RX;
 	rfm69_write(REGOPMODE, REGOPMODE_DEF | RX_MODE);
@@ -505,7 +512,7 @@ void rfm69_receive_start(void)
 	This function reads received packet into the @ref packet_buffer
 	@return size of the received packet, and if size of the received package exceeded the buffer size, return -1
 */
-int rfm69_receive_small_packet(void)
+int RFM69HCW::rfm69_receive_small_packet(void)
 {
 	int i;
 
@@ -525,7 +532,7 @@ int rfm69_receive_small_packet(void)
 	@function
 	Switch radiomodule into sleep mode.
 */
-void rfm69_sleep(void)
+void RFM69HCW::rfm69_sleep(void)
 {
 	rfm69_write(REGOPMODE, REGOPMODE_DEF | SLEEP_MODE);
 	rfm69_condition = RFM69_SLEEP;
@@ -535,7 +542,7 @@ void rfm69_sleep(void)
 	@function
 	Switch radiomodule into standby mode.
 */
-void rfm69_stby(void)
+void RFM69HCW::rfm69_stby(void)
 {
 	rfm69_write(REGOPMODE, REGOPMODE_DEF | STBY_MODE);
 	rfm69_condition = RFM69_STBY;
@@ -545,9 +552,20 @@ void rfm69_stby(void)
 	@function
 	Clear FIFO of radiomodule.
 */
-void rfm69_clear_fifo(void)
+void RFM69HCW::rfm69_clear_fifo(void)
 {
     int i;
     for(i=0 ; i<RFM69_BUFFER_SIZE ; ++i)   rfm69_read(REGFIFO);		// read every register one by one
     rfm69_write(REGIRQFLAGS2, 1<<FIFOOVERRUN);						// clear flag if overrun
 }
+
+/**
+	@function
+	Destructor
+*/
+RFM69HCW::~RFM69HCW(){
+
+}
+
+} /* rover namespace */
+
