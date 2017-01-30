@@ -194,23 +194,23 @@
 
 /// @}
 /*****************************************************************************/
+using namespace exploringBB;
 
-// TODO: define RFM69HCW class
 namespace rover{
+
+/// This enum describes state of radiomodule, which stored in rfm69_condition variable.
+enum RFM69STATE{
+    RFM69_SPI_FAILED = 1,   ///< failed to read register through SPI
+    RFM69_SLEEP,            ///< radiomodule is in sleep mode
+    RFM69_STBY,             ///< radiomodule is in standby mode
+    RFM69_RX,               ///< receiver is on (radiomodule waits for the packet)
+    RFM69_TX,               ///< transmitter is on (radiomodule transmits data)
+    RFM69_NEW_PACK          ///< the packet received successfully, radiomodule is in sleep mode
+};
 
 class RFM69HCW{
 
 public:
-    /// This enum describes state of radiomodule, which stored in rfm69_condition variable.
-    enum RFM69STATE{
-        RFM69_SPI_FAILED = 1,   ///< failed to read register through SPI
-        RFM69_SLEEP,            ///< radiomodule is in sleep mode
-        RFM69_STBY,             ///< radiomodule is in standby mode
-        RFM69_RX,               ///< receiver is on (radiomodule waits for the packet)
-        RFM69_TX,               ///< transmitter is on (radiomodule transmits data)
-        RFM69_NEW_PACK          ///< the packet received successfully, radiomodule is in sleep mode
-    };
-
 
     /** @name                   Register access functions                       **/
     RFM69HCW(); /* constructor */
@@ -233,10 +233,14 @@ public:
     void rfm69_sleep(void);
     void rfm69_stby(void);
     void rfm69_clear_fifo(void);
+    void EXTI0_IRQHandler(void);
+    void EXTI1_IRQHandler(void);
+    void EXTI2_IRQHandler(void);
+    ~RFM69HCW(void);
 
 private:
     RFM69STATE rfm69_condition; /* current state of radio */
-    SPIDevice spi; /* spi connection to radio */
+    SPIDevice *spi; /* spi connection to radio */
     uint8_t packet_buffer[RFM69_BUFFER_SIZE - 2];	///< packet buffer
     uint8_t packet_size;							///< packet size
 
