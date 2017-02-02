@@ -5,8 +5,11 @@
  * RFM69HCW driver for BeagleBone Black/Green
  * This driver is a port of dltech's generic C driver for the RFM69 which 
  * can be found here: https://github.com/dltech/RFM69.git
+ * It also changes based on the LowPowerLab Arduino Driver that can be found
+ * here: https://github.com/LowPowerLab/RFM69
  *
  *
+ * Original Header:
  ** @file rfm69.h @brief This file contains radiomodule settings, some macro 
  *  for MCU and functions prototypes.
  *
@@ -213,14 +216,14 @@ class RFM69HCW{
 public:
 
     /** @name                   Register access functions                       **/
-    RFM69HCW(); /* constructor */
+    RFM69HCW(uint8_t address, uint8_t device); /* constructor */
     void rfm69_write(uint8_t address, uint8_t data);
     uint8_t rfm69_read(uint8_t address);
     void rfm69_write_burst(uint8_t address, uint8_t* data, uint8_t ndata);
     void rfm69_read_burst(uint8_t address, uint8_t* data, uint8_t ndata);   
 
     /** @name                   Initialization functions                        **/
-    void rfm69_mcu_init(void); /* sets up SPI connection */
+    void rfm69_mcu_init(uint8_t adress, uint8_t device); /* sets up SPI connection */
     int rfm69_init(void); /* connects to radio and sets initial state */
 
     /** @name       Functions for transmitting or receiving packets             **/
@@ -236,6 +239,9 @@ public:
     void EXTI0_IRQHandler(void);
     void EXTI1_IRQHandler(void);
     void EXTI2_IRQHandler(void);
+    void select(void);
+    void unselect(void);
+    void setCS(uint8_t newSlaveSelect);
     ~RFM69HCW(void);
 
 private:

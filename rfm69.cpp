@@ -37,8 +37,9 @@ namespace rover {
     @function
     Constructor
 */
-RFM69HCW::RFM69HCW(){
+RFM69HCW::RFM69HCW(uint8_t address, uint8_t device){
     /* call rfm69_init() */
+    rfm69_mcu_init(address, device);
     rfm69_init();
 }
 
@@ -124,7 +125,41 @@ void RFM69HCW::EXTI0_IRQHandler(void)
     //EXTI_ClearITPendingBit(SyncAddr_Line);
 }
 
+/**
+    @function
+    Based off of LowPowerLab arduino driver.
+    Select the RFM69 transceiver (ie save SPI settings, set CS low)
+*/
+void RFM69HCW::select(){
+/*
+ * noInterrupts(); //externally defined funtion
+ * //set SPI settings
+ * spi.setDataMode(SPI_MODE0);
+ * spi.setBitOrder(MSBFISRT);
+ * spi.setClockDivider(SPI_CLOCK_DIV4);
+ * digitalWrite(_slaveSelectPin, LOW);
+ */
 
+}
+
+/**
+    @function
+    Based off of LowPowerLab arduino driver.
+    Unselect the RFM69 transceiver (ie restore SPI settings, set CS high)
+*/
+void RFM69HCW::unselect(){
+ /* restore SPI settings to what they were before talking to RFM69 */
+ /* enable interrupts */
+}
+
+/** 
+    @function
+    used in Arduino code to set slave select pin.
+    TODO: determine if/what mathods exist/need to be created to mimic this
+*/
+void RFM69HCW::setCS(uint8_t newSlaveSelect){
+
+}
 /** 
     @function
     Write radiomodule register via SPI.
@@ -138,6 +173,13 @@ void RFM69HCW::rfm69_write(uint8_t address, uint8_t data)
         cerr<<"RFM69HCW::rfm69_write->SPI not set"<<endl;
         return;
     }
+    /* from arduino LowPowerLab code: 
+     * select();
+     * transfer(addr & reg);
+     * uint8_t regval = transfer(0);
+     * unselect();
+     * return regval;
+    */
     this->spi->writeRegister(address, data); 
 
 /* TODO: figure out if any of this is worth reimplementing */
@@ -214,7 +256,7 @@ uint8_t RFM69HCW::rfm69_read(uint8_t address)
     interface, interrupts, GPIOs, etc. 
     TODO: replace code with SPIDevice calls
 */
-void RFM69HCW::rfm69_mcu_init(void)
+void RFM69HCW::rfm69_mcu_init(uint8_t address, uint8_t device)
 {
 //  Clock sources
     /* TODO: what is this and do I need it? */
@@ -224,7 +266,7 @@ void RFM69HCW::rfm69_mcu_init(void)
     //RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB, ENABLE);        
 
 //  SPI initialisation 
-    this->spi = new SPIDevice(0,0);
+    this->spi = new SPIDevice(address,device);
     this->spi->setSpeed(4000000); // 4KHz
     /* TODO: set other spi configuration here */
     //spi.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
@@ -247,10 +289,8 @@ void RFM69HCW::rfm69_mcu_init(void)
     RFM69_SPI_FAILED state. 
     @return 0 if initialisation completed successfully, and -1 otherwise
 */
-int RFM69HCW::rfm69_init(void){
+int RFM69HCW::rfm69_init(){
     int j;
-
-    rfm69_mcu_init();
 
 //  RFM69 initialization
     rfm69_write(REGOPMODE, REGOPMODE_DEF | STBY_MODE);
