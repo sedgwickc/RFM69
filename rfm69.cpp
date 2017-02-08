@@ -127,39 +127,46 @@ void RFM69HCW::EXTI0_IRQHandler(void)
 
 /**
     @function
-    Based off of LowPowerLab arduino driver.
-    Select the RFM69 transceiver (ie save SPI settings, set CS low)
+    Accessor method for packet_buffer
+    @param data - array to copy packet data into from packet_buffer
 */
-void RFM69HCW::select(){
-/*
- * noInterrupts(); //externally defined funtion
- * //set SPI settings
- * spi.setDataMode(SPI_MODE0);
- * spi.setBitOrder(MSBFISRT);
- * spi.setClockDivider(SPI_CLOCK_DIV4);
- * digitalWrite(_slaveSelectPin, LOW);
- */
-
+void RFM69HCW::getData( char *data){
+    int i;
+    for(i = 0; i < RFM69_BUFFER_SIZE; i++ ){
+        data[i] = this->packet_buffer[i];
+    }
 }
+
 
 /**
-    @function
-    Based off of LowPowerLab arduino driver.
-    Unselect the RFM69 transceiver (ie restore SPI settings, set CS high)
-*/
-void RFM69HCW::unselect(){
- /* restore SPI settings to what they were before talking to RFM69 */
- /* enable interrupts */
-}
+ * @function setMode
+ *
+ * @param byte newMode - Could use RF69_MODE_TX, RF69_MODE_RX, RF69_MODE_SYNTH, 
+ * RF69_MODE_STANDBY or RF69_MODE_SLEEP
+ */
+void RFM69HCW::setMode(uint8_t mode) {
 
-/** 
-    @function
-    used in Arduino code to set slave select pin.
-    TODO: determine if/what mathods exist/need to be created to mimic this
-*/
-void RFM69HCW::setCS(uint8_t newSlaveSelect){
-
+  switch (mode) {
+    case TX_MODE:
+      rfm69_write(REGOPMODE, (rfm69_read(REGOPMODE) & 0xE3) | TX_MODE);
+      break;
+    case RX_MODE:
+      rfm69_write(REGOPMODE, (rfm69_read(REGOPMODE) & 0xE3) | RX_MODE);
+      break;
+    case FS_MODE:
+      rfm69_write(REGOPMODE, (rfm69_read(REGOPMODE) & 0xE3) | FS_MODE);
+      break;
+    case STBY_MODE:
+      rfm69_write(REGOPMODE, (rfm69_read(REGOPMODE) & 0xE3) | STBY_MODE);
+      break;
+    case SLEEP_MODE:
+      rfm69_write(REGOPMODE, (rfm69_read(REGOPMODE) & 0xE3) | SLEEP_MODE);
+      break;
+    default: return;
+    }
 }
+  
+
 /** 
     @function
     Write radiomodule register via SPI.
@@ -173,39 +180,9 @@ void RFM69HCW::rfm69_write(uint8_t address, uint8_t data)
         cerr<<"RFM69HCW::rfm69_write->SPI not set"<<endl;
         return;
     }
-    /* from arduino LowPowerLab code: 
-     * select();
-     * transfer(addr & reg);
-     * uint8_t regval = transfer(0);
-     * unselect();
-     * return regval;
-    */
-    this->spi->writeRegister(address, data); 
-
-/* TODO: figure out if any of this is worth reimplementing */
-//  __disable_irq();
-//  while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_BSY) == SET);           
-//
-//  GPIO_ResetBits(NSS_Port, NSS_Pin);
-//
-//    SPI_I2S_SendData(SPI1, (address | 0x80));                               
-//    while ( (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET) && \
-//            (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_BSY) == SET) );
-//
-//    SPI_I2S_SendData(SPI1, data);                                             
-//
-//    while ( (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_RXNE) == RESET) && \
-//            (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_BSY) == SET) );
-//    SPI_I2S_ReceiveData(SPI1);                                                
-//
-//    while ( (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_RXNE) == RESET) && \
-//            (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_BSY) == SET) );
-//    SPI_I2S_ReceiveData(SPI1);                                                
-//
-//  while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_BSY) == SET);           
-//  GPIO_SetBits(NSS_Port, NSS_Pin);
-//
-//  __enable_irq();
+    if( this->spi->writeRegister(address, data) < 0 ){
+        cerr<<"RFM69HCW::rfm69_write->Error writing to register "<<address<<endl;
+    }
 }
 
 /** 
@@ -217,37 +194,11 @@ void RFM69HCW::rfm69_write(uint8_t address, uint8_t data)
 */
 uint8_t RFM69HCW::rfm69_read(uint8_t address)
 {
-
     uint8_t data = 0x00;
 
-    /* TODO: can char be casted to uint8_t????*/
     data =  this->spi->readRegister( address );
+	//cout << "The value that was received is: " << data << endl;
 	return data;
-	    
-//    __disable_irq();
-//    while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_BSY) == SET);           
-//
-//    GPIO_ResetBits(NSS_Port, NSS_Pin);
-//
-//    SPI_I2S_SendData(SPI1, (address));                                      
-//    while ( (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET) && \
-//            (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_BSY) == SET) );
-//
-//    SPI_I2S_SendData(SPI1, 0x87);                                           
-//
-//    while ( (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_RXNE) == RESET) && \
-//            (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_BSY) == SET) );
-//    SPI_I2S_ReceiveData(SPI1);                                              
-//
-//    while ( (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_RXNE) == RESET) && \
-//            (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_BSY) == SET) );
-//    data = SPI_I2S_ReceiveData(SPI1);                                       
-//
-//    while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_BSY) == SET);           
-//    GPIO_SetBits(NSS_Port, NSS_Pin);
-//
-//    __enable_irq();
-//    return data;
 }
 
 /** 
@@ -258,27 +209,8 @@ uint8_t RFM69HCW::rfm69_read(uint8_t address)
 */
 void RFM69HCW::rfm69_mcu_init(uint8_t address, uint8_t device)
 {
-//  Clock sources
-    /* TODO: what is this and do I need it? */
-    //RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-    //RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
-    //RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
-    //RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB, ENABLE);        
-
 //  SPI initialisation 
     this->spi = new SPIDevice(address,device);
-    this->spi->setSpeed(4000000); // 4KHz
-    /* TODO: set other spi configuration here */
-    //spi.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
-    //spi.SPI_Mode = SPI_Mode_Master;
-    //spi.SPI_DataSize = SPI_DataSize_8b;
-    //spi.SPI_CPOL = SPI_CPOL_Low;
-    //spi.SPI_CPHA = SPI_CPHA_1Edge;
-    //spi.SPI_NSS = SPI_NSS_Soft;
-    //spi.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_16;
-    //spi.SPI_FirstBit = SPI_FirstBit_MSB;
-    //SPI_Init(SPI1, &spi);
-
 }
 
 /** 
@@ -292,19 +224,22 @@ void RFM69HCW::rfm69_mcu_init(uint8_t address, uint8_t device)
 int RFM69HCW::rfm69_init(){
     int j;
 
+    this->spi->debugDumpRegisters();
 //  RFM69 initialization
-    rfm69_write(REGOPMODE, REGOPMODE_DEF | STBY_MODE);
-    rfm69_write(REGDATAMODUL, REGDATAMODUL_DEF);
+    rfm69_write(REGOPMODE, SEQUENCEROFF | LISTENOFF | STBY_MODE);
+    rfm69_write(REGDATAMODUL, PACKET_MODE | FSK | NO_SHAPING);
 
-    rfm69_write(REGFDEVMSB, REGFDEVMSB_DEF);
-    rfm69_write(REGFDEVLSB, REGFDEVLSB_DEF);
+    rfm69_write(REGFDEVMSB, DEVMSB_5000);
+    rfm69_write(REGFDEVLSB, DEVLSB_5000);
 
     rfm69_write(REGBITRATEMSB, REGBITRATEMSB_DEF);
     rfm69_write(REGBITRATELSB, REGBITRATELSB_DEF);
 
-    rfm69_write(REGFRFMSB, REGFRFMSB_DEF);
-    rfm69_write(REGFRFMID, REGFRFMID_DEF);
-    rfm69_write(REGFRFLSB, REGFRFLSB_DEF);
+    rfm69_write(REGFRFMSB, FRFMSB_915);
+    rfm69_write(REGFRFMID, FRFMID_915);
+    rfm69_write(REGFRFLSB, FRFLSB_915);
+
+    rfm69_write(REGRXBW, RXBW_DCCFREQ_010 | RXBW_MANT_16 | RXBW_EXP_2);
 
     rfm69_write(REGAFCCTRL, REGAFCCTRL_DEF);
 
@@ -312,46 +247,39 @@ int RFM69HCW::rfm69_init(){
 //  rfm69_write(REGLISTEN2, REGLISTEN2_DEF);
 //  rfm69_write(REGLISTEN3, REGLISTEN3_DEF);
 
-    rfm69_write(REGPALEVEL, REGPALEVEL_DEF);
-    rfm69_write(REGPARAMP, REGPARAMP_DEF);
-    rfm69_write(REGOCP, REGOCP_DEF);
-    rfm69_write(REGLNA, REGLNA_DEF);
+//    rfm69_write(REGPALEVEL, REGPALEVEL_DEF);
+//    rfm69_write(REGPARAMP, REGPARAMP_DEF);
+//    rfm69_write(REGOCP, REGOCP_DEF);
+//    rfm69_write(REGLNA, REGLNA_DEF);
 
-    rfm69_write(REGRXBW, REGRXBW_DEF);
-    rfm69_write(REGAFCBW, REGAFCBW_DEF);
 
 //  rfm69_write(REGOOKPEAK, REGOOKPEAK_DEF);
 //  rfm69_write(REGOOKAVG, REGOOKAVG_DEF);
 //  rfm69_write(REGOOKFIX, REGOOKFIX_DEF);
 
-    rfm69_write(REGAFCFEI, REGAFCFEI_DEF);
+//    rfm69_write(REGAFCFEI, REGAFCFEI_DEF);
 
-    rfm69_write(REGDIOMAPPING1, REGDIOMAPPING1_DEF);
-    rfm69_write(REGDIOMAPPING2, REGDIOMAPPING2_DEF);
+ //   rfm69_write(REGDIOMAPPING1, REGDIOMAPPING1_DEF);
+ //   rfm69_write(REGDIOMAPPING2, REGDIOMAPPING2_DEF);
 
-    rfm69_write(REGRSSITHRESH, REGRSSITHRESH_DEF);
+    rfm69_write(REGRSSITHRESH, 220);
+    rfm69_write(REGFIFOTHRES, FIFOTHRESH_TXSTART_FIFONOTEMPTY | FIFOTHRESH_VALUE);
 
-    rfm69_write(REGPREAMBLEMSB, REGPREAMBLEMSB_DEF);
-    rfm69_write(REGPREAMBLELSB, REGPREAMBLELSB_DEF);
+    //rfm69_write(REGPREAMBLEMSB, REGPREAMBLEMSB_DEF);
+    //rfm69_write(REGPREAMBLELSB, REGPREAMBLELSB_DEF);
 
-    rfm69_write(REGSYNCCONFIG, REGSYNCCONFIG_DEF);
+    rfm69_write(REGSYNCCONFIG, SYNC_ON | SYNC_FIFOFILL_AUTO | SYNC_SIZE_2 | SYNC_TOL_0 );
     rfm69_write(REGSYNCVALUE1, REGSYNCVALUE1_DEF);
-    rfm69_write(REGSYNCVALUE2, REGSYNCVALUE2_DEF);
-    rfm69_write(REGSYNCVALUE3, REGSYNCVALUE3_DEF);
-    rfm69_write(REGSYNCVALUE4, REGSYNCVALUE4_DEF);
-    rfm69_write(REGSYNCVALUE5, REGSYNCVALUE5_DEF);
-    rfm69_write(REGSYNCVALUE6, REGSYNCVALUE6_DEF);
-    rfm69_write(REGSYNCVALUE7, REGSYNCVALUE7_DEF);
-    rfm69_write(REGSYNCVALUE8, REGSYNCVALUE8_DEF);
+    rfm69_write(REGSYNCVALUE2, REGSYNCVALUE2_DEF);// set network id
 
     rfm69_write(REGPACKETCONFIG1, REGPACKETCONFIG1_DEF);
-    rfm69_write(REGPAYLOADLENGHT, REGPAYLOADLENGHT_DEF);
+    rfm69_write(REGPAYLOADLENGTH, REGPAYLOADLENGTH_DEF);
     rfm69_write(REGNODEADRS, REGNODEADRS_DEF);
     rfm69_write(REGBROADCASTADRS, REGBROADCASTADRS_DEF);
     rfm69_write(REGAUTOMODES, REGAUTOMODES_DEF);
 
-    rfm69_write(REGFIFOTHRES, REGFIFOTHRES_DEF);
-    rfm69_write(REGPACKETCONFIG2, REGPACKETCONFIG2_DEF);
+    rfm69_write(REGPACKETCONFIG2,
+        PACKET2_RXRESTARTDELAY_2BITS | PACKET2_AUTORXRESTART_ON | PACKET2_AES_OFF);
 
 //  rfm69_write(REGAESKEY1, REGAESKEY1_DEF);
 //  rfm69_write(REGAESKEY2, REGAESKEY2_DEF);
@@ -370,23 +298,42 @@ int RFM69HCW::rfm69_init(){
 //  rfm69_write(REGAESKEY15, REGAESKEY15_DEF);
 //  rfm69_write(REGAESKEY16, REGAESKEY16_DEF);
 
-    rfm69_write(REGTESTDAGC, AFC_LOW_BETA_OFF);
+    rfm69_write(REGTESTDAGC, DAGC_IMPROVED_LOWBETA0);
 
     rfm69_write(REGIRQFLAGS2, 1<<FIFOOVERRUN);
+    this->spi->debugDumpRegisters();
 
+    /* TODO: remove this busy waiting. Replace with call to sleep */
     for (j=0 ; j<99999 ; ++j);
     rfm69_receive_start();
-
-    if ( rfm69_read(REGRXBW) != REGRXBW_DEF ) {     // SPI check
+    // SPI check
+    int ret = rfm69_read(REGRXBW);
+    if ( ret != (RXBW_DCCFREQ_010 | RXBW_MANT_16 | RXBW_EXP_2) ) {
         rfm69_condition = RFM69_SPI_FAILED;
+        cerr<<"RFM69HCW::rfm69_init->SPI failed. ret: '"<<ret<<"'"<<endl;
         return -1;
+    }else{
+        return 0;
     }
-    else    return 0;
+}
+
+int RFM69HCW::getRSSI(int forceTrigger){
+  int rssi = 0;
+  if (forceTrigger == 1) {
+    //RSSI trigger not needed if DAGC is in continuous mode
+    rfm69_write(REGRSSICONFIG, RSSISTART);
+    while ((rfm69_read(REGRSSICONFIG) & RSSIDONE) == 0x00); // Wait for RSSI_Ready
+  }
+  rssi = -rfm69_read(REGRSSIVALUE);
+  rssi >>= 1;
+  rssi += 20;
+  return rssi;
+
 }
 
 /** 
     @function
-    Start packet transmittion. This function assumes that radiomodule is in receive, sleep or standby mode. Also do not forget to 
+    Start packet transmission. This function assumes that radiomodule is in receive, sleep or standby mode. Also do not forget to 
     switch the transmitter off when package is already transmitted (interrupts will do that).
     @param packet_size_loc - size of the packet
     @param address - destination address (use broadcast address 0xff if you do not know any)
@@ -442,18 +389,37 @@ void RFM69HCW::rfm69_receive_start(void)
 */
 int RFM69HCW::rfm69_receive_small_packet(void)
 {
-    int i;
+    unsigned int timeout = 10000;
+    /* receive data until timeout or valid data */
+    while(1){
+        if (rfm69_read(REGIRQFLAGS2) & PAYLOADREADY){
+            rfm69_write(REGPACKETCONFIG2, (rfm69_read(REGPACKETCONFIG2) &
+                0xFB) | RESTARTRX); // avoid RX deadlocks
+        }
+        setMode(RX_MODE);
 
-    packet_size = rfm69_read(REGFIFO);                                      // read the packet size
-    if(packet_size > RFM69_BUFFER_SIZE) return -1;                          // check size of the package
+        // Receive Data until timeout (aprox 2s)
+        while((rfm69_read(REGIRQFLAGS2) & PAYLOADREADY) == 0) {
+            timeout--;
+            if(timeout == 0) {
+                setMode(STBY_MODE);
+                return -2;
+            }
+        }
 
-    rfm69_read(REGFIFO);                                                    // drop address
-    --packet_size;
+        packet_size = rfm69_read(REGFIFO);   // read the packet size
+        if(packet_size > 63) return -1;    // check size of the package
 
-    for(i=0 ; i<packet_size ; ++i) packet_buffer[i] = rfm69_read(REGFIFO);  // read package from FIFO
-    rfm69_clear_fifo();
+        rfm69_read(REGFIFO);    // drop address
+        --packet_size;
 
-    return packet_size;
+        int i;
+        // read package from FIFO
+        for(i=0 ; i<packet_size ; ++i) packet_buffer[i] = rfm69_read(REGFIFO);  
+        rfm69_clear_fifo();
+
+        return packet_size;
+    }
 }
 
 /**
@@ -492,7 +458,8 @@ void RFM69HCW::rfm69_clear_fifo(void)
     Destructor
 */
 RFM69HCW::~RFM69HCW(){
-
+    this->spi->close();
+    delete this->spi;
 }
 
 } /* rover namespace */

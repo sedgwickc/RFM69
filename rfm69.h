@@ -59,33 +59,33 @@
 #define OOKFIXEDTHRESH          6                   // theshold value in dB
 
 // Packet handler configuration
-#define PREAMBLE                4                   ///< preamble lenght in bytes
-#define SYNC_WORD_SIZE          4                   ///< sync word size in bytes (choose 0 if you do not use it)
+#define PREAMBLE                0x03                   ///< preamble lenght in bytes
+#define SYNC_WORD_SIZE          0x04                   ///< sync word size in bytes (choose 0 if you do not use it)
 #define SYNC_WORD               0x753be1ca753be1ca  ///< sync word
-#define SYNCTOL                 2                   ///< number of tolerated bits in sync word
+#define SYNCTOL                 0x02                   ///< number of tolerated bits in sync word
 
-#define RX_ADDRESS              0x05                ///< radiomodule address
-#define BROADCAST_ADDRESS       0xff                ///< broadcast address
+#define RX_ADDRESS              0x01                ///< radiomodule address
+#define BROADCAST_ADDRESS       0x64                ///< broadcast address
 
 #define AUTO_RESTART_RX_DELAY   1                   ///< auto restart rx delay in ms
 
-#define RSSI_THRESH             88                  ///< RSSI threshold value in dBm
-#define FIFO_THRESHOLD          32                  ///< FIFO threshold value in bytes
+#define RSSI_THRESH             0xE4                  ///< RSSI threshold value in dBm
+#define FIFO_THRESHOLD          0x20                  ///< FIFO threshold value in bytes
 
-#define CUT_OFF_FREQ            4                   ///< cut off frecuency expressed in % of RXBW
-#define CUT_OFF_FREQ_AFC        4                   ///< AFC cut off frecuency expressed in % of RXBW 
+#define CUT_OFF_FREQ            0x04                   ///< cut off frecuency expressed in % of RXBW
+#define CUT_OFF_FREQ_AFC        0x04                   ///< AFC cut off frecuency expressed in % of RXBW 
 
 /// @}
 /*****************************************************************************/
 
 /// @cond
 /*****************************************************************************/
-/*                           Constatns                                       */
+/*                           Constants                                       */
 
 #define FXOSC               32000000
 #define FSTEP               61
 #define PI                  3.14159265359
-#define RFM69_BUFFER_SIZE   66
+#define RFM69_BUFFER_SIZE   61
 /*****************************************************************************/
 
 #include "rfm69_table.h"
@@ -93,39 +93,42 @@
 
 /*****************************************************************************/
 /*                          Radiomodule registers                            */
-#define REGOPMODE_DEF           ( 0<<SEQUENCEROFF | 0<<LISTENON | SLEEP_MODE )
-#define REGDATAMODUL_DEF        ( PACKET_MODE | MODUL_TYPE | GAUSS_BT10 )
+#define REGOPMODE_DEF    0x00
+#define REGDATAMODUL_DEF  0x02
 
-#define REGFDEVMSB_DEF          ( (FDEV_CALC(DEVIATION) & 0xff00) >> 8 )        // value of this register is calculated from the settings above (it is desirable not to change this value)
-#define REGFDEVLSB_DEF          (  FDEV_CALC(DEVIATION) & 0x00ff )              // value of this register is calculated from the settings above (it is desirable not to change this value)
 
-#define REGBITRATEMSB_DEF       ( (BITRATE_CALC(BITRATE) & 0xff00) >> 8 )       // value of this register is calculated from the settings above (it is desirable not to change this value)
-#define REGBITRATELSB_DEF       (  BITRATE_CALC(BITRATE) & 0x00ff )             // value of this register is calculated from the settings above (it is desirable not to change this value)
+#define REGBITRATEMSB_DEF   0x03 // value of this register is calculated from the settings above (it is desirable not to change this value)
+#define REGBITRATELSB_DEF   0x04 // value of this register is calculated from the settings above (it is desirable not to change this value)
 
-#define REGFRFMSB_DEF           ( (FRF_CALC(CARRIER_FREQ) & 0xff0000) >> 16 )   // value of this register is calculated from the settings above (it is desirable not to change this value)
-#define REGFRFMID_DEF           ( (FRF_CALC(CARRIER_FREQ) & 0x00ff00) >> 8 )    // value of this register is calculated from the settings above (it is desirable not to change this value)
-#define REGFRFLSB_DEF           (  FRF_CALC(CARRIER_FREQ) & 0x0000ff )          // value of this register is calculated from the settings above (it is desirable not to change this value)
+// value of this register is calculated from the settings above (it is desirable not to change this value)
+//#define REGFRFMSB_DEF           ( (FRF_CALC(CARRIER_FREQ) & 0xff0000) >> 16 )   
+#define REGFRFMSB_DEF   0xE4
+
+// value of this register is calculated from the settings above (it is desirable not to change this value)
+//#define REGFRFMID_DEF           ( (FRF_CALC(CARRIER_FREQ) & 0x00ff00) >> 8 )    
+#define REGFRFMID_DEF   0xC0
+
+// value of this register is calculated from the settings above (it is desirable not to change this value)
+//#define REGFRFLSB_DEF           (  FRF_CALC(CARRIER_FREQ) & 0x0000ff )          
+#define REGFRFLSB_DEF   0x00
 
 #define REGAFCCTRL_DEF          ( 0<<(AFCLOWBETAON) )
 
-#define REGLISTEN1_DEF          ( 0x00 )
-#define REGLISTEN2_DEF          ( 0x00 )
-#define REGLISTEN3_DEF          ( 0x00 )
+#define REGLISTEN1_DEF          ( 0x0D )
+#define REGLISTEN2_DEF          ( 0x0E )
+#define REGLISTEN3_DEF          ( 0x0F )
 
-#define REGPALEVEL_DEF          ( 1<<PA0ON | 0<<PA1ON | 0<<PA2ON | (OUT_POWER_CALC(OUTPUT_POWER)) )
-#define REGPARAMP_DEF           ( PARAMP )                                      // value of this register is calculated from the settings above (it is desirable not to change this value)
-#define REGOCP_DEF              ( 1<<OCPON  | (OCP_CURRENT_CALC(OCP_CURRENT)) )
-#define REGLNA_DEF              ( 1<<LNAZIN | LNAGAIN_AUTO )
-
-#define REGRXBW_DEF             ( DCCFREQ | RXBW )                              // value of this register is calculated from the settings above (it is desirable not to change this value)
-#define REGAFCBW_DEF            ( DCCFREQAFC | RXBWAFC )                        // value of this register is calculated from the settings above (it is desirable not to change this value)
+#define REGPALEVEL_DEF    0x11
+#define REGPARAMP_DEF    0x12// value of this register is calculated from the settings above (it is desirable not to change this value)
+#define REGOCP_DEF  0x13
+#define REGLNA_DEF  0x18
 
 // OOK reqisters
-#define REGOOKPEAK_DEF          ( 0x00 )
-#define REGOOKAVG_DEF           ( 0x00 )
-#define REGOOKFIX_DEF           ( 0x00 )
+#define REGOOKPEAK_DEF          ( 0x1B )
+#define REGOOKAVG_DEF           ( 0x1C )
+#define REGOOKFIX_DEF           ( 0x1D )
 
-#define REGAFCFEI_DEF           ( (1<<AFCAUTOCLEAR) | (0<<AFCAUTOON) )
+#define REGAFCFEI_DEF    0x1E
 
 #define REGDIOMAPPING1_DEF      ( DIO0MAP0 | DIO1MAP0 | DIO2MAP2 | DIO3MAP1 )
 #define REGDIOMAPPING2_DEF      ( DIO5MAP0 | CLKOUT8M )
@@ -133,21 +136,20 @@
 #define REGRSSITHRESH_DEF       ( RSSI_THRESH_CALC(RSSI_THRESH) )               // value of this register is calculated from the settings above (it is desirable not to change this value)
 
 // packet handler registers
-#define REGPREAMBLEMSB_DEF      ( (PREAMBLE & 0xff00) >> 8 )                    // value of this register is calculated from the settings above (it is desirable not to change this value)
-#define REGPREAMBLELSB_DEF      ( PREAMBLE & 0x00ff )                           // value of this register is calculated from the settings above (it is desirable not to change this value)
+#define REGPREAMBLEMSB_DEF    0x2C 
+#define REGPREAMBLELSB_DEF    0x2D 
 
-#define REGSYNCCONFIG_DEF       ( SYNC_WORD_ON | 0<<FIFOFILLCOND | SYNCSIZE_CALC(SYNC_WORD_SIZE) | (SYNCTOL&0x07) )
-#define REGSYNCVALUE1_DEF       (  SYNC_WORD & 0x00000000000000ff )             // value of this register is calculated from the settings above (it is desirable not to change this value)
-#define REGSYNCVALUE2_DEF       ( (SYNC_WORD & 0x000000000000ff00) >> 8 )       // value of this register is calculated from the settings above (it is desirable not to change this value)
-#define REGSYNCVALUE3_DEF       ( (SYNC_WORD & 0x0000000000ff0000) >> 16 )      // value of this register is calculated from the settings above (it is desirable not to change this value)
-#define REGSYNCVALUE4_DEF       ( (SYNC_WORD & 0x00000000ff000000) >> 24 )      // value of this register is calculated from the settings above (it is desirable not to change this value)
-#define REGSYNCVALUE5_DEF       ( (SYNC_WORD & 0x000000ff00000000) >> 32 )      // value of this register is calculated from the settings above (it is desirable not to change this value)
-#define REGSYNCVALUE6_DEF       ( (SYNC_WORD & 0x0000ff0000000000) >> 40 )      // value of this register is calculated from the settings above (it is desirable not to change this value)
-#define REGSYNCVALUE7_DEF       ( (SYNC_WORD & 0x00ff000000000000) >> 48 )      // value of this register is calculated from the settings above (it is desirable not to change this value)
-#define REGSYNCVALUE8_DEF       ( (SYNC_WORD & 0xff00000000000000) >> 56 )      // value of this register is calculated from the settings above (it is desirable not to change this value)
+#define REGSYNCVALUE1_DEF    0x2D  // attempt to make compatible with RFM12B lib
+#define REGSYNCVALUE2_DEF    0x64  // default network id = 100
+#define REGSYNCVALUE3_DEF    0x31 
+#define REGSYNCVALUE4_DEF    0x32 
+#define REGSYNCVALUE5_DEF    0x33 
+#define REGSYNCVALUE6_DEF    0x34 
+#define REGSYNCVALUE7_DEF    0x35 
+#define REGSYNCVALUE8_DEF    0x36 
 
-#define REGPACKETCONFIG1_DEF    ( 1<<PACKETFORMAT | ENCODING_OFF | 1<<CRCON | 0<<CRCAUTOCLEAROFF | NODE_BROADCAST_ADDR)
-#define REGPAYLOADLENGHT_DEF    ( 0xff )
+#define REGPACKETCONFIG1_DEF    ( PACKETFORMAT_FIXED | ENCODING_OFF | CRCON | CRCAUTOCLEAROFF | NODE_BROADCAST_ADDR)
+#define REGPAYLOADLENGTH_DEF    66
 #define REGNODEADRS_DEF         ( RX_ADDRESS )                                  // value of this register is calculated from the settings above (it is desirable not to change this value)
 #define REGBROADCASTADRS_DEF    ( BROADCAST_ADDRESS )                           // value of this register is calculated from the settings above (it is desirable not to change this value)
 
@@ -239,16 +241,16 @@ public:
     void EXTI0_IRQHandler(void);
     void EXTI1_IRQHandler(void);
     void EXTI2_IRQHandler(void);
-    void select(void);
-    void unselect(void);
-    void setCS(uint8_t newSlaveSelect);
+    void getData( char *data);
+    void setMode(uint8_t mode);
+    int getRSSI(int);
     ~RFM69HCW(void);
 
 private:
     RFM69STATE rfm69_condition; /* current state of radio */
     SPIDevice *spi; /* spi connection to radio */
-    uint8_t packet_buffer[RFM69_BUFFER_SIZE - 2];	///< packet buffer
-    uint8_t packet_size;							///< packet size
+    uint8_t packet_buffer[RFM69_BUFFER_SIZE ];  ///< packet buffer
+    uint8_t packet_size;                            ///< packet size
 
 };
 
